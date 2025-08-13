@@ -1,2 +1,2 @@
-# mini-cms-basic
-Mini CMS - Basic Edition
+# mini-cms
+Mini CMS
