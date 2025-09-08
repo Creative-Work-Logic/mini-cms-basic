@@ -18,7 +18,7 @@ file:
 
 e.g.
 
-{{include:filename.ext}} path to file /includes/
+{{include:filename.ext}} path to file /includes/ <br>
 {{file:filename.ext}} path to file /pages/
 {{index:filename.ext}} path to file /
 {{class_name->execute_method}}
