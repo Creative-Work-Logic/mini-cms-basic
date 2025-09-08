@@ -1,0 +1,91 @@
+<?php
+require 'FileManager.php';
+$fm = new FileManager('.');
+$dir = $_GET['dir'] ?? '.';
+$files = $fm->list($dir);
+?>
+<!DOCTYPE html>
+<html>
+
+<head>
+    <title>PHP Class File Manager</title>
+    <style>
+        body {
+            font-family: monospace;
+            background: #111;
+            color: #eee;
+        }
+
+        a {
+            color: #3b82f6;
+            text-decoration: none;
+        }
+
+        a:hover {
+            text-decoration: underline;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        th,
+        td {
+            padding: 5px;
+            text-align: left;
+        }
+
+        tr:nth-child(even) {
+            background: #222;
+        }
+    </style>
+</head>
+
+<body>
+    <h1>File Manager: <?= htmlspecialchars(realpath($dir)) ?></h1>
+    <table>
+        <tr>
+            <th>Name</th>
+            <th>Type</th>
+            <th>Size</th>
+            <th>Actions</th>
+        </tr>
+        <?php foreach ($files as $f):
+            if (!$f)
+                continue;
+            ?>
+            <tr>
+                <td>
+                    <?php if ($f['is_dir']): ?>
+                        <a href="?dir=<?= urlencode($f['path']) ?>"><?= htmlspecialchars($f['name']) ?></a>
+                    <?php else: ?>
+                        <?= htmlspecialchars($f['name']) ?>
+                    <?php endif; ?>
+                </td>
+                <td><?= $f['is_dir'] ? 'Folder' : 'File' ?></td>
+                <td><?= $f['size'] ?? '-' ?></td>
+                <td>
+                    <?php if (!$f['is_dir']): ?>
+                        <a href="view.php?file=<?= urlencode($f['path']) ?>" target="_blank">View</a> |
+                    <?php endif; ?>
+                    <a href="#" onclick="deleteFile('<?= addslashes($f['path']) ?>')">Delete</a>
+                </td>
+            </tr>
+        <?php endforeach; ?>
+    </table>
+
+    <script>
+        function deleteFile(path) {
+            if (confirm('Delete ' + path + '?')) {
+                fetch('delete.php', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+                    body: 'file=' + encodeURIComponent(path)
+                }).then(res => res.text()).then(alert).then(() => location.reload());
+            }
+        }
+    </script>
+</body>
+
+</html>

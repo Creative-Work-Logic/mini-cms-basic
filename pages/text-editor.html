@@ -1,0 +1,27 @@
+<div class="wrapper">
+    <div id="editor">
+        
+    </div>
+
+    
+</div>
+
+<script>
+    // Initialize Ace
+    var editor = ace.edit("editor");
+    editor.setTheme("ace/theme/github_dark");
+    editor.session.setMode("ace/mode/php");
+    editor.setOptions({
+        fontSize: "10px",
+        showLineNumbers: true,
+        useSoftTabs: true,
+        tabSize: 4
+    });
+</script>
+
+<script>
+var fileContent = {{clsOutput_Map->retrieve_folder_file}};
+    let encoded = fileContent;  // "Hello World!"
+    let decoded = atob(encoded);
+editor.setValue(decoded, -1);
+</script>

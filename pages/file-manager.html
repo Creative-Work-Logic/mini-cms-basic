@@ -1,0 +1,405 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Recursive Files/Folders Dropdown Menu with Editor</title>
+    <style>
+        :root {
+            --bg: #0b0d10;
+            --panel: #11141a;
+            --muted: #9aa3af;
+            --fg: #e6e6e6;
+            --accent: #60a5fa;
+            --border: #1f2937;
+            --focus: #2563eb;
+        }
+
+        * {
+            box-sizing: border-box;
+        }
+
+        html,
+        body {
+            height: 100%;
+        }
+
+        body {
+            margin: 0;
+            background: var(--bg);
+            color: var(--fg);
+            font: 14px/1.45 ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Ubuntu, Cantarell, Noto Sans, Helvetica, Arial, "Apple Color Emoji", "Segoe UI Emoji";
+            display: flex;
+            flex-direction: column;
+            height: 100vh;
+        }
+
+        header {
+            position: sticky;
+            top: 0;
+            z-index: 10;
+            background: linear-gradient(180deg, rgba(17, 20, 26, .95), rgba(17, 20, 26, .85));
+            backdrop-filter: blur(6px);
+            border-bottom: 1px solid var(--border);
+        }
+
+        .wrap {
+            max-width: 980px;
+            margin: 0 auto;
+            padding: 16px;
+        }
+
+        .controls {
+            display: flex;
+            gap: 8px;
+            align-items: center;
+            flex-wrap: wrap;
+        }
+
+        .controls input[type="search"] {
+            flex: 1 1 340px;
+            background: #0f1217;
+            color: var(--fg);
+            border: 1px solid var(--border);
+            border-radius: 10px;
+            padding: 10px 12px;
+            outline: none;
+        }
+
+        .controls input[type="search"]:focus {
+            border-color: var(--focus);
+            box-shadow: 0 0 0 3px rgba(37, 99, 235, .25);
+        }
+
+        .btn {
+            background: #121620;
+            color: var(--fg);
+            border: 1px solid var(--border);
+            padding: 10px 12px;
+            border-radius: 10px;
+            cursor: pointer;
+            transition: transform .08s ease, background .2s ease, border-color .2s ease;
+            user-select: none;
+        }
+
+        .btn:hover {
+            background: #151a24;
+        }
+
+        .btn:active {
+            transform: translateY(1px);
+        }
+
+        main {
+            display: flex;
+            flex: 1;
+            overflow: hidden;
+        }
+
+        .tree {
+            width: 40%;
+            overflow: auto;
+            background: var(--panel);
+            border: 1px solid var(--border);
+            border-radius: 0;
+            padding: 10px 12px;
+            box-shadow: inset 0 0 10px rgba(0, 0, 0, .25);
+        }
+
+        .editor {
+            flex: 1;
+            background: #0f1217;
+            border-left: 1px solid var(--border);
+            padding: 10px;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .editor textarea {
+            flex: 1;
+            width: 100%;
+            resize: none;
+            background: #0b0d10;
+            color: var(--fg);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            padding: 10px;
+            font-family: monospace;
+            font-size: 14px;
+        }
+
+        .legend {
+            color: var(--muted);
+            font-size: 12px;
+            margin: 8px 4px 12px;
+        }
+
+        details {
+            --indent: 18px;
+        }
+
+        details,
+        summary {
+            list-style: none;
+        }
+
+        summary {
+            display: grid;
+            grid-template-columns: 16px 1fr auto;
+            align-items: center;
+            gap: 8px;
+            cursor: pointer;
+            padding: 6px 6px;
+            border-radius: 8px;
+        }
+
+        summary:focus {
+            outline: none;
+        }
+
+        details[open]>summary {
+            background: rgba(96, 165, 250, .06);
+        }
+
+        summary:focus-visible {
+            box-shadow: 0 0 0 3px rgba(37, 99, 235, .35);
+        }
+
+        .twisty {
+            width: 12px;
+            height: 12px;
+            transform: rotate(-90deg);
+            transition: transform .18s ease;
+            opacity: .9;
+        }
+
+        details[open]>summary .twisty {
+            transform: rotate(0deg);
+        }
+
+        .icon {
+            width: 14px;
+            height: 14px;
+            opacity: .95;
+        }
+
+        .children {
+            margin-left: 18px;
+            padding-left: 8px;
+            border-left: 1px dashed #263142;
+        }
+
+        .file {
+            display: grid;
+            grid-template-columns: 16px 1fr auto;
+            align-items: center;
+            gap: 8px;
+            padding: 6px 6px;
+            margin-left: 18px;
+            border-radius: 8px;
+        }
+
+        .file:hover {
+            background: rgba(148, 163, 184, .06);
+        }
+
+        .meta {
+            color: var(--muted);
+            font-size: 12px;
+        }
+
+        .hide {
+            display: none !important;
+        }
+
+        [data-title] {
+            position: relative;
+        }
+
+        [data-title]:hover::after {
+            content: attr(data-title);
+            position: absolute;
+            left: 50%;
+            transform: translateX(-50%);
+            bottom: calc(100% + 6px);
+            white-space: nowrap;
+            background: #0f1217;
+            color: var(--fg);
+            padding: 4px 8px;
+            border: 1px solid var(--border);
+            border-radius: 6px;
+            font-size: 12px;
+            box-shadow: 0 6px 24px rgba(0, 0, 0, .35);
+        }
+    </style>
+</head>
+
+<body>
+    <header>
+        <div class="wrap">
+            <div class="controls">
+                <input id="filter" type="search" placeholder="Filter by name… (RegExp supported)"
+                    aria-label="Filter files and folders" />
+                <button class="btn" id="expandAll" title="Open all folders">Expand all</button>
+                <button class="btn" id="collapseAll" title="Close all folders">Collapse all</button>
+                <button class="btn" id="reset" title="Reset filter and state">Reset</button>
+            </div>
+        </div>
+    </header>
+
+    <main>
+        <div class="tree" id="tree" role="tree" aria-label="Project files"></div>
+        <div class="editor">
+            <div class="legend">Editor (double‑click a file to load)</div>
+            <textarea id="editorArea" placeholder="File content will appear here..."></textarea>
+        </div>
+    </main>
+
+    <script>
+        const data = [
+            {
+                type: 'folder', name: 'app', children: [
+                    {
+                        type: 'folder', name: 'components', children: [
+                            { type: 'file', name: 'Header.jsx', size: 2816, content: '// Header.jsx code here' },
+                            { type: 'file', name: 'Sidebar.jsx', size: 3772, content: '// Sidebar.jsx code here' },
+                        ]
+                    },
+                    {
+                        type: 'folder', name: 'lib', children: [
+                            { type: 'file', name: 'util.ts', size: 1003, content: '// util.ts code here' },
+                            { type: 'file', name: 'api.ts', size: 2210, content: '// api.ts code here' },
+                        ]
+                    },
+                    { type: 'file', name: 'main.tsx', size: 4124, content: '// main.tsx code here' },
+                ]
+            },
+            {
+                type: 'folder', name: 'public', children: [
+                    { type: 'file', name: 'favicon.ico', size: 543, content: 'binary data not editable' },
+                    { type: 'file', name: 'robots.txt', size: 112, content: 'User-agent: *\nDisallow:' },
+                ]
+            },
+            { type: 'file', name: 'index.html', size: 835, content: '<!DOCTYPE html>\n<html>\n<head>\n<title>Index</title>\n</head>\n<body>Home</body>\n</html>' },
+            { type: 'file', name: 'package.json', size: 1761, content: '{\n  "name": "demo-app",\n  "version": "1.0.0"\n}' },
+        ];
+
+        const icons = {
+            caret: `<svg class="twisty" viewBox="0 0 24 24" aria-hidden="true"><path d="M8 10l4 4 4-4" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>`,
+            folder: `<svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M3 7a2 2 0 0 1 2-2h4l2 2h8a2 2 0 0 1 2 2v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V7z" fill="currentColor"/></svg>`,
+            file: `<svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M6 2h9l5 5v13a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2z" fill="currentColor"/></svg>`,
+            dots: `<svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><circle cx="5" cy="12" r="1.5"/><circle cx="12" cy="12" r="1.5"/><circle cx="19" cy="12" r="1.5"/></svg>`
+        };
+
+        function createFolderNode(node, path = []) {
+            const details = document.createElement('details');
+            details.setAttribute('role', 'treeitem');
+            details.setAttribute('aria-expanded', 'false');
+            details.dataset.type = 'folder';
+            details.dataset.name = node.name;
+            details.dataset.path = [...path, node.name].join('/');
+
+            const summary = document.createElement('summary');
+            summary.innerHTML = `${icons.caret}${icons.folder}<span>${escapeHtml(node.name)}</span><span class="meta" data-title="Path">${details.dataset.path}</span>`;
+            details.appendChild(summary);
+
+            const childrenWrap = document.createElement('div');
+            childrenWrap.className = 'children';
+            childrenWrap.setAttribute('role', 'group');
+
+            (node.children || []).forEach(child => {
+                const childNode = createAnyNode(child, [...path, node.name]);
+                childrenWrap.appendChild(childNode);
+            });
+
+            details.appendChild(childrenWrap);
+            details.addEventListener('toggle', () => {
+                details.setAttribute('aria-expanded', details.open ? 'true' : 'false');
+            });
+
+            return details;
+        }
+
+        function createFileNode(node, path = []) {
+            const row = document.createElement('div');
+            row.className = 'file';
+            row.setAttribute('role', 'treeitem');
+            row.tabIndex = 0;
+            row.dataset.type = 'file';
+            row.dataset.name = node.name;
+            row.dataset.path = [...path, node.name].join('/');
+
+            row.innerHTML = `${icons.file}<span>${escapeHtml(node.name)}</span><span class="meta">${formatSize(node.size)}</span>`;
+
+            row.addEventListener('dblclick', () => {
+                document.getElementById('editorArea').value = node.content || '';
+            });
+
+            row.addEventListener('keydown', (e) => {
+                if (e.key === 'Enter') row.dispatchEvent(new MouseEvent('dblclick'));
+            });
+
+            return row;
+        }
+
+        function createAnyNode(node, path) {
+            return node.type === 'folder' ? createFolderNode(node, path) : createFileNode(node, path);
+        }
+
+        function renderTree(data, root) {
+            root.innerHTML = '';
+            const frag = document.createDocumentFragment();
+            data.forEach(item => frag.appendChild(createAnyNode(item, [])));
+            root.appendChild(frag);
+        }
+
+        function applyFilter(query) {
+            let re = null;
+            if (query) {
+                try { re = new RegExp(query, 'i'); } catch (e) { }
+            }
+            const items = document.querySelectorAll('#tree [role="treeitem"]');
+            items.forEach(el => el.classList.remove('hide'));
+            if (!re) return;
+            items.forEach(el => {
+                const name = el.dataset.name || '';
+                if (!re.test(name)) el.classList.add('hide');
+            });
+            document.querySelectorAll('details').forEach(d => {
+                const visibleDesc = d.querySelectorAll(':scope [role="treeitem"]:not(.hide)').length;
+                const selfHidden = d.classList.contains('hide');
+                d.open = visibleDesc > 0 && !selfHidden;
+            });
+        }
+
+        function expandAll() { document.querySelectorAll('details').forEach(d => d.open = true); }
+        function collapseAll() { document.querySelectorAll('details').forEach(d => d.open = false); }
+
+        function formatSize(n) {
+            if (typeof n !== 'number') return '';
+            const units = ['B', 'KB', 'MB', 'GB'];
+            let u = 0; let v = n;
+            while (v >= 1024 && u < units.length - 1) { v /= 1024; u++; }
+            return v.toFixed(v < 10 && u > 0 ? 1 : 0) + ' ' + units[u];
+        }
+        function escapeHtml(s) { return String(s).replace(/[&<>\"]+/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '\"': '&quot;' }[c])); }
+
+        const treeRoot = document.getElementById('tree');
+        renderTree(data, treeRoot);
+
+        const filter = document.getElementById('filter');
+        filter.addEventListener('input', (e) => applyFilter(e.target.value.trim()));
+
+        document.getElementById('expandAll').addEventListener('click', expandAll);
+        document.getElementById('collapseAll').addEventListener('click', collapseAll);
+        document.getElementById('reset').addEventListener('click', () => {
+            filter.value = '';
+            collapseAll();
+            applyFilter('');
+            document.getElementById('editorArea').value = '';
+        });
+    </script>
+</body>
+
+</html>

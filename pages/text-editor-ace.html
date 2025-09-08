@@ -1,0 +1,13 @@
+<script src="https://cdnjs.cloudflare.com/ajax/libs/ace/1.4.12/ace.js" type="text/javascript" charset="utf-8"></script>
+      
+      <!-- Container for the editor -->
+      <div id="editor" style="height: 400px; width: 600px; border: 1px solid #ccc;"></div>
+      
+      <!-- Initialize Ace Editor -->
+      <script>
+        // Get a reference to the editor element
+        var editor = ace.edit("editor");
+        // Set the theme and language mode
+        editor.setTheme("ace/theme/monokai");
+        editor.session.setMode("ace/mode/javascript");
+      </script>
